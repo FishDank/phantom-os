@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phantom OS - Authentication</title>
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+    <div class="login-container">
+        <!-- Scanlines overlay -->
+        <div class="scanlines"></div>
+        
+        <!-- Grid overlay -->
+        <div class="grid-overlay"></div>
+        
+        <div class="login-box">
+            <div class="login-header">
+                <div class="logo">PHANTOM OS</div>
+                <div class="subtitle">SECURE TERMINAL ACCESS</div>
+            </div>
+            
+            <div class="login-form">
+                <div class="status" id="loginStatus">WAITING FOR AUTHENTICATION</div>
+                
+                <div class="user-selection" id="userSelection">
+                    <div class="instruction">Select Your Role:</div>
+                    <div class="role-buttons">
+                        <button class="role-btn" data-role="bryon" id="bryonBtn">
+                            <div class="role-title">BRYON</div>
+                            <div class="role-desc">Primary Operator</div>
+                            <div class="role-status" id="bryonStatus">● AVAILABLE</div>
+                        </button>
+                        <button class="role-btn" data-role="ryan" id="ryanBtn">
+                            <div class="role-title">RYAN</div>
+                            <div class="role-desc">Command Authority</div>
+                            <div class="role-status" id="ryanStatus">● WAITING FOR BRYON</div>
+                        </button>
+                        <button class="role-btn board-btn" data-role="board" id="boardBtn">
+                            <div class="role-title">BOARD OPERATOR</div>
+                            <div class="role-desc">Mission Control</div>
+                            <div class="role-status">● ALWAYS AVAILABLE</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="connection-status">
+                    <div class="connected-users" id="connectedUsers">
+                        <div class="users-title">CONNECTED OPERATIVES:</div>
+                        <div class="users-list" id="usersList">None</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="login-footer">
+                <div class="warning">⚠ AUTHORIZED PERSONNEL ONLY ⚠</div>
+                <div class="timestamp" id="timestamp">00:00:00</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO client (CDN for GitHub Pages) -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="audio-permission.js"></script>
+    <script src="login.js"></script>
+</body>
+</html>

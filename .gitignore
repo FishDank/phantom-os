@@ -1,0 +1,41 @@
+# Node
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+server.log
+server-error.log
+server-errors.log
+
+# Test outputs
+coverage/
+playwright-report/
+test-results/
+
+# Build artifacts
+/dist/
+/build/
+/out/
+
+# Environment files
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+
+# Old assets
+public-OLD/
+
+# Misc
+.package-lock.json
+

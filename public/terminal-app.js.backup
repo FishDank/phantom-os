@@ -1,0 +1,823 @@
+// Phantom OS Mission Control System with Login Integration
+class PhantomMissionControl {
+    constructor() {
+        this.state = window.missionState;
+        this.socket = null;
+        this.recognition = null;
+        this.currentAudio = null;
+        this.isProcessingStep = false;
+        this.subtitlesEnabled = false; // Don't enable until Razor says "Understood"
+        
+        // Mission sequence definition with full plot
+        this.missionSequence = [
+            { type: 'audio', file: '1.mp3', description: 'Dispatch: Be advised, potential possession of high caliber firearms in settlement-37. Requesting BG check in the perimeter, over.' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: '10-4, Preforming BG check of area 37. Acknowledgement of the Autarch is necessary; until then, 10-20 on the suspected location of the contraband?', 
+                description: 'Bryon: 10-4, Preforming BG check of area 37. Acknowledgement of the Autarch is necessary; until then, 10-20 on the suspected location of the contraband?' 
+            },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Razor, Subtitles.', 
+                description: 'Bryon: Razor, Subtitles.',
+                special: 'activate_board' 
+            },
+            { type: 'audio', file: '4.mp3', description: 'Razor: Understood.' },
+            { type: 'delay', duration: 700 },
+            { type: 'audio', file: '5.mp3', description: 'Dispatch: 10-4 on the 10-20, Location is between housing block 9 through housing block 18 on a 3 by 3 grid.' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Thanks for the detail\'s dispatch. Acknowledging now.', 
+                description: 'Bryon: Thanks for the detail\'s dispatch. Acknowledging now.' 
+            },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Phantom 4, Autarch 10-8 yet?', 
+                description: 'Bryon: Phantom 4, Autarch 10-8 yet?' 
+            },
+            { type: 'audio', file: '8.mp3', description: 'Phantom 4: Affirmative Autarch is in service, want to be transferred?' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Yes.', 
+                description: 'Bryon: Yes.' 
+            },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: '2 alpha 1-1?', 
+                description: 'Bryon: 2 alpha 1-1?' 
+            },
+            { 
+                type: 'voice', 
+                speaker: 'ryan', 
+                expected: '1-1, go ahead.', 
+                description: 'Ryan: 1-1, go ahead.' 
+            },
+            { type: 'command_wait', command: 'sudo ./info.tor', speaker: 'bryon', description: 'Wait for Bryon to type sudo ./info.tor', special: 'show_map' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Sir, There has been activity of Illegal contraband dealing with heavy firearms between housing 9 through 18, clearance to scan the grid?', 
+                description: 'Bryon: Sir, There has been activity of Illegal contraband dealing with heavy firearms between housing 9 through 18, clearance to scan the grid?' 
+            },
+            { 
+                type: 'voice', 
+                speaker: 'ryan', 
+                expected: 'Roger, command acknowledges possible arms deal within settlement 37 boundaries,', 
+                description: 'Ryan: Roger, command acknowledges possible arms deal within settlement 37 boundaries,' 
+            },
+            { type: 'audio', file: '15.mp3', description: '24 Gamma 1-5: 2 gamma 1, are we authorized yet? Dispatch is getting impatient.' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Yes authorized, start the C.C.T.V:O scan on 9 through 13 on the 3 by 3 grid.', 
+                description: 'Bryon: Yes authorized, start the C.C.T.V:O scan on 9 through 13 on the 3 by 3 grid.' 
+            },
+            { type: 'audio', file: '17.mp3', description: '24 Gamma 1-5: Alright Scanning.' },
+            { type: 'delay', duration: 2000 },
+            { type: 'audio', file: 'failed.mp3', description: 'Scan failed sound', special: 'show_failed' },
+            { type: 'delay', duration: 700 },
+            { type: 'audio', file: '18.mp3', description: '24 Gamma 1-5: I scanned the grid and nothing!' },
+            { type: 'audio', file: '19.mp3', description: '24 Gamma 2-4 and 24 Gamma 5-1: That cant be correct.' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Let me try, Razor', 
+                description: 'Bryon: Let me try, Razor' 
+            },
+            { type: 'audio', file: '21.mp3', description: 'Razor: Yes T.O.D Captain, What is it?' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Scan the entirety of settlement 37.', 
+                description: 'Bryon: Scan the entirety of settlement 37.' 
+            },
+            { type: 'audio', file: '23.mp3', description: 'Razor: That will take up 68% the CPU load and 37% of the GPU Load, Are you okay with that?' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'I\'m aware of the cost.', 
+                description: 'Bryon: I\'m aware of the cost.', 
+                special: 'animate_resources' 
+            },
+            { type: 'audio', file: '25.mp3', description: 'Razor: 10-4 T.O.D Captain, I am scanning now.' },
+            { 
+                type: 'voice', 
+                speaker: 'ryan', 
+                expected: 'Status on perimeter scan?', 
+                description: 'Ryan: Status on perimeter scan?' 
+            },
+            { type: 'audio', file: '27.mp3', description: '24 Gamma 5-1: First scan failed. The Captain is scanning with the AI.' },
+            { type: 'delay', duration: 500 },
+            { type: 'audio', file: '28.mp3', description: 'Dispatch: We need our directives!' },
+            { type: 'delay', duration: 1000 },
+            { type: 'audio', file: 'success.mp3', description: 'Success scan sound', special: 'show_success' },
+            { type: 'delay', duration: 1000 },
+            { type: 'audio', file: '29.mp3', description: 'Razor: 2 firearms detected in block 21, What are your directives, sir?' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'What is the current householder name?', 
+                description: 'Bryon: What is the current householder name?' 
+            },
+            { type: 'audio', file: '31.mp3', description: 'Razor: House holder name is William Morse Age 32. Anything else?' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Run a BG check on William Morse.', 
+                description: 'Bryon: Run a BG check on William Morse.' 
+            },
+            { type: 'audio', file: '33.mp3', description: 'Razor: William Morse has been arrested for 2 counts of murder and was released from San Quentin State Prison on a 750,000 dollar bond in 2027, Anything else?' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Razor, put settlement 37 on lockdown.', 
+                description: 'Bryon: Razor, put settlement 37 on lockdown.' 
+            },
+            { type: 'audio', file: '35.mp3', description: 'Razor: Affirmative.' },
+            { type: 'delay', duration: 1000 },
+            { type: 'audio', file: 'lockdown.mp3', description: 'Lockdown audio' },
+            { type: 'delay', duration: 1000 },
+            { type: 'audio', file: 'announcement.mp3', description: 'Announcement audio' },
+            { type: 'command_wait', command: 'bash meet', speaker: 'bryon', description: 'Wait for Bryon to type bash meet', special: 'close_map' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: 'Autarch, waiting for directives, send a team out. Note the weapons he has are a Remington 886 and a M4A1, I\'m not sure how he got those through.', 
+                description: 'Bryon: Autarch, waiting for directives, send a team out. Note the weapons he has are a Remington 886 and a M4A1, I\'m not sure how he got those through.' 
+            },
+            { 
+                type: 'voice', 
+                speaker: 'ryan', 
+                expected: '10-4, just as confused as you are, task forces epsilon 12, and eta 9 of the 24th regiment is en-route to settlement 37. We\'ll also send in delta 4 to keep the operation smooth and within guidelines. Officer 107 will be leading the effort on the rooftops. All responding law enforcement units hold for reinforcement. Directive: 185-164-172-176-166. Codes 225, 307, 308, over.', 
+                description: 'Ryan: 10-4, just as confused as you are, task forces epsilon 12, and eta 9 of the 24th regiment is en-route to settlement 37. We\'ll also send in delta 4 to keep the operation smooth and within guidelines. Officer 107 will be leading the effort on the rooftops. All responding law enforcement units hold for reinforcement. Directive: 185-164-172-176-166. Codes 225, 307, 308, over.' 
+            },
+            { type: 'delay', duration: 10000 },
+            { type: 'audio', file: '38.mp3', description: 'OFFICER-107: 24-alpha 1-1 sending live feed. Date: August 21st, 2030. Directive: raid and apprehension of subject, William Morris. Status: resident. Recording position: rooftop 49. View: southwest to settlement 37 block 21 house 5. Address: 409 East Beginnings st. Units involved: 2407, 2404, 2405. Light exposure 37%. sounds on. Visual augmentation set to capture interface and agent position markers. Ground unit feed is also available. Mission directive may now be executed, standby for audible changes to directive as situation evolves, over.' },
+            { type: 'delay', duration: 5000 },
+            { type: 'audio', file: 'riot.mp3', description: 'Gunshot sounds', special: 'show_gunshots' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: '107, what the hell is going on over there, report!', 
+                description: 'Bryon: 107, what the hell is going on over there, report!' 
+            },
+            { type: 'audio', file: '40.mp3', description: 'OFFICER-107: 10-4, 10-27, multiple agents from multiple units are down, subject is 10-28. Requesting CASEVAC, over.' },
+            { type: 'special', action: 'blackout', description: 'Board goes black' },
+            { 
+                type: 'voice', 
+                speaker: 'bryon', 
+                expected: '10-4.', 
+                description: 'Bryon: 10-4.' 
+            },
+            { type: 'special', action: 'end_video', description: 'Play end video fullscreen' }
+        ];
+        
+        this.init();
+    }
+    
+    async init() {
+        // Get user role from URL parameters or session storage
+        this.getUserRole();
+        this.setupWebSocket();
+        this.setupVoiceRecognition();
+        this.setupUI();
+        this.startClock();
+        this.logMessage('SYSTEM', `Phantom OS Terminal initialized. User: ${this.state.userRole?.toUpperCase() || 'UNKNOWN'}`);
+        this.logMessage('SYSTEM', 'Type "bash mission" to start mission sequence (Bryon only)');
+    }
+    
+    getUserRole() {
+        // Check for role in session storage (set by login system)
+        const role = sessionStorage.getItem('phantomRole');
+        if (role) {
+            this.state.userRole = role;
+            return;
+        }
+        
+        // If no role, redirect to login
+        window.location.href = '/login.html';
+    }
+    
+    setupWebSocket() {
+        try {
+            this.socket = new WebSocket('ws://localhost:3000');
+            
+            this.socket.onopen = () => {
+                this.logMessage('SYSTEM', 'Secure connection established');
+                this.socket.send(JSON.stringify({ 
+                    type: 'terminal_connected', 
+                    role: this.state.userRole,
+                    timestamp: Date.now()
+                }));
+            };
+            
+            this.socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                this.handleWebSocketMessage(data);
+            };
+            
+            this.socket.onclose = () => {
+                this.logMessage('ERROR', 'Connection lost. Mission will restart...');
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 3000);
+            };
+            
+            this.socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                this.logMessage('ERROR', 'Connection error detected');
+            };
+        } catch (error) {
+            console.error('Failed to setup WebSocket:', error);
+            this.logMessage('ERROR', 'Unable to establish secure connection');
+        }
+    }
+    
+    setupVoiceRecognition() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            this.logMessage('WARNING', 'Voice recognition not available - mission may require manual input');
+            return;
+        }
+        
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.recognition = new SpeechRecognition();
+        
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.lang = 'en-US';
+        
+        this.recognition.onstart = () => {
+            this.state.isListening = true;
+            this.updateListeningIndicator(true);
+        };
+        
+        this.recognition.onresult = (event) => {
+            this.handleVoiceResult(event);
+        };
+        
+        this.recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            this.state.isListening = false;
+            this.updateListeningIndicator(false);
+        };
+        
+        this.recognition.onend = () => {
+            this.state.isListening = false;
+            this.updateListeningIndicator(false);
+            
+            // Restart if we should still be listening and mission is started
+            if (this.shouldBeListening() && this.state.missionStarted) {
+                setTimeout(() => this.recognition.start(), 100);
+            }
+        };
+    }
+    
+    setupUI() {
+        // Update terminal header with role
+        const title = document.querySelector('.terminal-title');
+        if (title) {
+            title.textContent = `E-DEX COMMAND TERMINAL - ${this.state.userRole?.toUpperCase() || 'UNKNOWN'}`;
+        }
+        
+        // Command input handling
+        const commandInput = document.getElementById('commandInput');
+        commandInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.handleCommand(commandInput.value.trim());
+                commandInput.value = '';
+            }
+        });
+    }
+    
+    startClock() {
+        setInterval(() => {
+            const now = new Date();
+            const timeString = now.toTimeString().split(' ')[0];
+            document.getElementById('timestamp').textContent = timeString;
+        }, 1000);
+    }
+    
+    handleCommand(command) {
+        this.logMessage('COMMAND', `${this.state.userRole?.toUpperCase()}: ${command}`);
+        
+        // Mission start command - only Bryon can start
+        if (command === 'bash mission' && !this.state.missionStarted) {
+            if (this.state.userRole === 'bryon') {
+                this.startMissionSequence();
+                return;
+            } else {
+                this.logMessage('ERROR', 'Access denied. Only BRYON can start mission.');
+                return;
+            }
+        }
+        
+        // Mission reset command - either user can reset
+        if (command === 'bash reset' && this.state.missionStarted) {
+            this.resetMission();
+            return;
+        }
+        
+        // Regular mission commands during sequence
+        if (this.state.missionStarted && this.expectedCommand && command === this.expectedCommand) {
+            // Check if the command is from the correct user
+            const currentStep = this.missionSequence[this.state.currentStep];
+            if (currentStep && currentStep.speaker && currentStep.speaker !== this.state.userRole) {
+                this.logMessage('ERROR', `Command must be executed by ${currentStep.speaker.toUpperCase()}`);
+                return;
+            }
+            
+            this.logMessage('COMMAND', '✓ Command accepted');
+            this.expectedCommand = null;
+            this.state.commandsEnabled = false;
+            
+            if (this.currentCommandResolve) {
+                this.currentCommandResolve();
+                this.currentCommandResolve = null;
+            }
+        } else if (this.expectedCommand && this.state.missionStarted) {
+            this.logMessage('COMMAND', `✗ Expected: ${this.expectedCommand}`);
+        } else if (!this.state.missionStarted) {
+            this.logMessage('COMMAND', 'Mission not started. Use "bash mission" to begin (Bryon only)');
+        } else {
+            this.logMessage('COMMAND', 'Command not recognized');
+        }
+    }
+    
+    startMissionSequence() {
+        this.state.missionStarted = true;
+        this.logMessage('MISSION', '🚀 MISSION SEQUENCE INITIATED');
+        this.logMessage('SYSTEM', 'Voice recognition activated');
+        
+        // Broadcast mission start to all clients
+        this.broadcastMessage({ 
+            type: 'mission_started', 
+            initiatedBy: this.state.userRole,
+            timestamp: Date.now()
+        });
+        
+        // Start listening for voice commands
+        if (this.recognition) {
+            this.startListening();
+        }
+        
+        this.processNextStep();
+    }
+    
+    resetMission() {
+        this.logMessage('SYSTEM', '🔄 MISSION RESET INITIATED');
+        
+        // Broadcast reset to all clients
+        this.broadcastMessage({ 
+            type: 'mission_reset', 
+            initiatedBy: this.state.userRole,
+            timestamp: Date.now()
+        });
+        
+        // Reset will be handled by server, which will disconnect all clients
+    }
+    
+    async processNextStep() {
+        if (this.isProcessingStep || !this.state.missionStarted) return;
+        
+        this.isProcessingStep = true;
+        
+        const currentStep = this.missionSequence[this.state.currentStep];
+        
+        if (!currentStep) {
+            this.logMessage('MISSION', '✅ MISSION SEQUENCE COMPLETED');
+            this.isProcessingStep = false;
+            return;
+        }
+        
+        this.logMessage('SYSTEM', `Step ${this.state.currentStep + 1}/${this.missionSequence.length}: ${currentStep.description}`);
+        
+        try {
+            await this.executeStep(currentStep);
+            this.state.currentStep++;
+            
+            // Small delay between steps
+            setTimeout(() => {
+                this.isProcessingStep = false;
+                this.processNextStep();
+            }, 100);
+        } catch (error) {
+            console.error('Error processing step:', error);
+            this.logMessage('ERROR', `Step failed: ${error.message}`);
+            this.isProcessingStep = false;
+        }
+    }
+    
+    async executeStep(step) {
+        switch (step.type) {
+            case 'audio':
+                await this.playAudio(step.file);
+                await this.handleSpecialEffect(step.special);
+                break;
+                
+            case 'voice':
+                if (step.speaker === this.state.userRole) {
+                    this.state.currentSpeaker = step.speaker;
+                    this.waitForVoiceInput(step.expected, step.speaker);
+                    await this.handleSpecialEffect(step.special);
+                    return new Promise(resolve => {
+                        this.currentVoiceResolve = resolve;
+                    });
+                } else {
+                    // Wait for other user's voice input
+                    this.logMessage('VOICE', `Waiting for ${step.speaker.toUpperCase()}: "${step.expected}"`);
+                    await this.handleSpecialEffect(step.special);
+                    return new Promise(resolve => {
+                        this.currentVoiceResolve = resolve;
+                    });
+                }
+                
+            case 'command_wait':
+                if (step.speaker === this.state.userRole) {
+                    this.state.commandsEnabled = true;
+                    this.waitForCommand(step.command, step.speaker);
+                    await this.handleSpecialEffect(step.special);
+                    return new Promise(resolve => {
+                        this.currentCommandResolve = resolve;
+                    });
+                } else {
+                    // Wait for other user's command
+                    this.logMessage('COMMAND', `Waiting for ${step.speaker.toUpperCase()} to execute: ${step.command}`);
+                    await this.handleSpecialEffect(step.special);
+                    return new Promise(resolve => {
+                        this.currentCommandResolve = resolve;
+                    });
+                }
+                
+            case 'delay':
+                await new Promise(resolve => setTimeout(resolve, step.duration));
+                break;
+                
+            case 'special':
+                await this.handleSpecialAction(step.action);
+                break;
+        }
+    }
+    
+    async playAudio(filename) {
+        return new Promise((resolve, reject) => {
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio.currentTime = 0;
+            }
+            
+            this.currentAudio = new Audio(`audio/${filename}`);
+            
+            this.currentAudio.onended = () => {
+                this.logMessage('AUDIO', `Finished: ${filename}`);
+                resolve();
+            };
+            
+            this.currentAudio.onerror = () => {
+                this.logMessage('WARNING', `Audio file ${filename} not found - continuing`);
+                resolve(); // Continue mission even if audio fails
+            };
+            
+            this.currentAudio.onloadeddata = () => {
+                this.currentAudio.play().catch(error => {
+                    console.error('Audio play error:', error);
+                    this.logMessage('WARNING', `Audio playback failed: ${filename}`);
+                    resolve(); // Continue mission
+                });
+            };
+            
+            this.logMessage('AUDIO', `Playing: ${filename}`);
+            this.broadcastAudio(filename);
+        });
+    }
+    
+    waitForVoiceInput(expectedText, speaker) {
+        this.logMessage('VOICE', `Your line: "${expectedText}"`);
+        this.state.currentSpeaker = speaker;
+        this.expectedVoice = expectedText.toLowerCase();
+        this.correctLine = expectedText; // Store correct line for subtitles
+    }
+    
+    waitForCommand(expectedCommand, speaker) {
+        this.logMessage('COMMAND', `Execute command: ${expectedCommand}`);
+        this.expectedCommand = expectedCommand;
+    }
+    
+    handleVoiceResult(event) {
+        if (!this.expectedVoice || this.state.currentSpeaker !== this.state.userRole) return;
+        
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+                transcript += event.results[i][0].transcript;
+            }
+        }
+        
+        if (transcript.trim() === '') return;
+        
+        const spokenText = transcript.toLowerCase().trim();
+        this.logMessage('VOICE_INPUT', `Detected: "${spokenText}"`);
+        
+        // Fuzzy matching for voice recognition
+        if (this.isVoiceMatch(spokenText, this.expectedVoice)) {
+            this.logMessage('VOICE', '✓ Voice input accepted');
+            
+            // Show correct line in subtitles (not what was actually said)
+            this.broadcastMessage({
+                type: 'show_subtitle',
+                text: this.correctLine,
+                speaker: this.state.userRole
+            });
+            
+            this.expectedVoice = null;
+            this.state.currentSpeaker = null;
+            
+            // Broadcast voice input to synchronize other clients
+            this.broadcastMessage({
+                type: 'voice_input_completed',
+                speaker: this.state.userRole,
+                text: this.correctLine // Use correct line, not spoken text
+            });
+            
+            if (this.currentVoiceResolve) {
+                this.currentVoiceResolve();
+                this.currentVoiceResolve = null;
+            }
+        }
+    }
+    
+    isVoiceMatch(spoken, expected) {
+        // Very lenient matching - if one word matches, let it pass
+        const spokenWords = spoken.toLowerCase().split(' ');
+        const expectedWords = expected.toLowerCase().split(' ');
+        
+        // Check if any meaningful word matches (excluding common words)
+        const commonWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were'];
+        
+        const meaningfulExpectedWords = expectedWords.filter(word => 
+            word.length > 2 && !commonWords.includes(word)
+        );
+        
+        // If any meaningful word from expected text is found in spoken text, accept it
+        return meaningfulExpectedWords.some(expectedWord => 
+            spokenWords.some(spokenWord => 
+                spokenWord.includes(expectedWord) || expectedWord.includes(spokenWord) ||
+                this.levenshteinDistance(spokenWord, expectedWord) <= 2 // Allow for small typos
+            )
+        );
+    }
+    
+    levenshteinDistance(str1, str2) {
+        const matrix = [];
+        for (let i = 0; i <= str2.length; i++) {
+            matrix[i] = [i];
+        }
+        for (let j = 0; j <= str1.length; j++) {
+            matrix[0][j] = j;
+        }
+        for (let i = 1; i <= str2.length; i++) {
+            for (let j = 1; j <= str1.length; j++) {
+                if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j] + 1
+                    );
+                }
+            }
+        }
+        return matrix[str2.length][str1.length];
+    }
+    
+    async handleSpecialEffect(effect) {
+        if (!effect) return;
+        
+        switch (effect) {
+            case 'activate_board':
+                this.broadcastMessage({ type: 'activate_board' });
+                this.logMessage('SYSTEM', 'Board activated - subtitles enabled');
+                break;
+                
+            case 'show_map':
+                this.showImage('map.png');
+                await this.playAudio('open.mp3');
+                this.broadcastMessage({ type: 'show_map', image: 'map.png' });
+                break;
+                
+            case 'show_failed':
+                this.showImage('failed.png');
+                this.broadcastMessage({ type: 'show_image', image: 'failed.png' });
+                break;
+                
+            case 'show_success':
+                this.showImage('success.png');
+                this.broadcastMessage({ type: 'show_image', image: 'success.png' });
+                break;
+                
+            case 'animate_resources':
+                this.animateResourceUsage(25, 93, 30, 67);
+                break;
+                
+            case 'close_map':
+                this.hideImage();
+                this.broadcastMessage({ type: 'close_map' });
+                break;
+                
+            case 'show_gunshots':
+                this.showSubtitle('[Gunshots]');
+                this.broadcastMessage({ type: 'show_subtitle', text: '[Gunshots]' });
+                break;
+        }
+    }
+    
+    async handleSpecialAction(action) {
+        switch (action) {
+            case 'blackout':
+                this.activateBlackout();
+                this.broadcastMessage({ type: 'blackout' });
+                break;
+                
+            case 'end_video':
+                this.playEndVideo();
+                this.broadcastMessage({ type: 'end_video' });
+                break;
+        }
+    }
+    
+    showImage(imageSrc) {
+        const displayContent = document.getElementById('displayContent');
+        displayContent.innerHTML = `<img src="${imageSrc}" alt="Mission Display" class="slide-in-right">`;
+        this.state.mapVisible = true;
+    }
+    
+    hideImage() {
+        const displayContent = document.getElementById('displayContent');
+        displayContent.innerHTML = '<div class="standby-message">STANDBY</div>';
+        this.state.mapVisible = false;
+    }
+    
+    showSubtitle(text) {
+        // This is mainly for board synchronization
+    }
+    
+    animateResourceUsage(cpuFrom, cpuTo, gpuFrom, gpuTo) {
+        const cpuBar = document.getElementById('cpuBar');
+        const cpuValue = document.getElementById('cpuValue');
+        const gpuBar = document.getElementById('gpuBar');
+        const gpuValue = document.getElementById('gpuValue');
+        
+        // Animate CPU
+        this.animateValue(cpuFrom, cpuTo, 2000, (value) => {
+            cpuBar.style.width = `${value}%`;
+            cpuValue.textContent = `${Math.round(value)}%`;
+        });
+        
+        // Animate GPU
+        this.animateValue(gpuFrom, gpuTo, 2000, (value) => {
+            gpuBar.style.width = `${value}%`;
+            gpuValue.textContent = `${Math.round(value)}%`;
+        });
+    }
+    
+    animateValue(from, to, duration, callback) {
+        const startTime = performance.now();
+        
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const currentValue = from + (to - from) * progress;
+            
+            callback(currentValue);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+    
+    activateBlackout() {
+        const missionDisplay = document.getElementById('missionDisplay');
+        missionDisplay.classList.add('blackout-active');
+    }
+    
+    playEndVideo() {
+        const endOverlay = document.getElementById('endOverlay');
+        const endVideo = document.getElementById('endVideo');
+        
+        endOverlay.style.display = 'flex';
+        endVideo.play();
+    }
+    
+    startListening() {
+        if (this.recognition && !this.state.isListening) {
+            try {
+                this.recognition.start();
+            } catch (error) {
+                console.error('Failed to start speech recognition:', error);
+            }
+        }
+    }
+    
+    shouldBeListening() {
+        return this.expectedVoice && this.state.currentSpeaker === this.state.userRole;
+    }
+    
+    updateListeningIndicator(isListening) {
+        const indicator = document.querySelector('.status-indicator');
+        if (indicator) {
+            if (isListening) {
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.remove('active');
+            }
+        }
+    }
+    
+    broadcastMessage(message) {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            this.socket.send(JSON.stringify(message));
+        }
+    }
+    
+    broadcastAudio(filename) {
+        this.broadcastMessage({
+            type: 'play_audio',
+            file: filename,
+            timestamp: Date.now()
+        });
+    }
+    
+    handleWebSocketMessage(data) {
+        switch (data.type) {
+            case 'user_disconnected':
+                this.logMessage('SYSTEM', `${data.role?.toUpperCase()} disconnected - Mission will restart`);
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 3000);
+                break;
+                
+            case 'mission_reset':
+                this.logMessage('SYSTEM', `Mission reset by ${data.initiatedBy?.toUpperCase()}`);
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 2000);
+                break;
+                
+            case 'voice_input_completed':
+                if (data.speaker !== this.state.userRole && this.currentVoiceResolve) {
+                    this.logMessage('VOICE', `${data.speaker?.toUpperCase()} spoke: "${data.text}"`);
+                    this.currentVoiceResolve();
+                    this.currentVoiceResolve = null;
+                }
+                break;
+                
+            case 'command_completed':
+                if (data.speaker !== this.state.userRole && this.currentCommandResolve) {
+                    this.logMessage('COMMAND', `${data.speaker?.toUpperCase()} executed: ${data.command}`);
+                    this.currentCommandResolve();
+                    this.currentCommandResolve = null;
+                }
+                break;
+                
+            case 'board_connected':
+                this.logMessage('SYSTEM', 'Operator board connected');
+                break;
+        }
+    }
+    
+    logMessage(type, message) {
+        const output = document.getElementById('terminalOutput');
+        const line = document.createElement('div');
+        line.className = 'terminal-line';
+        
+        const timestamp = new Date().toLocaleTimeString();
+        const typeClass = type.toLowerCase().replace('_', '-');
+        
+        line.innerHTML = `
+            <span class="prompt">[${timestamp}]</span>
+            <span class="command-text ${typeClass}">[${type}] ${message}</span>
+        `;
+        
+        output.appendChild(line);
+        output.scrollTop = output.scrollHeight;
+        
+        // Keep only last 100 messages
+        if (output.children.length > 100) {
+            output.removeChild(output.firstChild);
+        }
+    }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new PhantomMissionControl();
+});

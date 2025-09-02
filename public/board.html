@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phantom OS - Board Operator Panel</title>
+    <link rel="stylesheet" href="police-board.css">
+</head>
+<body class="pb-body">
+    <div id="board" class="pb-root">
+        <!-- Scanlines overlay -->
+        <div class="scanlines"></div>
+        
+        <!-- Grid overlay -->
+        <div class="grid-overlay"></div>
+        
+        <!-- Top header -->
+        <div class="pb-topbar">
+            <div class="pb-title">PHANTOM OPERATOR PANEL - BOARD</div>
+            <div class="pb-meta">
+                <div class="mission-info">
+                    <span>MISSION STEP: </span>
+                    <span id="missionStep">0</span>
+                </div>
+                <div class="status-info">
+                    <span>STATUS: </span>
+                    <span id="systemStatus">INITIALIZING</span>
+                </div>
+                <div class="timestamp" id="timestamp">00:00:00</div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="pb-main">
+            <!-- Left side - Operation logs -->
+            <section class="pb-logs">
+                <header>OPERATION LOGS</header>
+                <div class="pb-loglist" id="operationLogs">
+                    <!-- Operation logs will appear here -->
+                </div>
+                <div class="pb-presence">
+                    <div class="connected-users">
+                        <span>CONNECTED OPERATIVES:</span>
+                        <div id="connectedUsersList">None</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right side - Map and subtitles -->
+            <section class="pb-right">
+                <!-- Map/Visual display -->
+                <div class="pb-mapstage" id="mapDisplay">
+                    <div class="map-standby">
+                        <div class="standby-text">NO ACTIVE FEED</div>
+                        <div class="standby-icon">◯</div>
+                    </div>
+                </div>
+                
+                <!-- Subtitle display -->
+                <div class="pb-subtitle" id="subtitleDisplay">
+                    <div class="subtitle-text">AWAITING TRANSMISSION...</div>
+                </div>
+                
+                <!-- Resource bars (hidden initially) -->
+                <div id="resourceBars" class="pb-resource-bars" style="display: none;">
+                    <div class="pb-resource-bar">
+                        <span>CPU:</span>
+                        <div class="pb-bar">
+                            <div id="cpuBar" class="pb-bar-fill" style="width: 25%"></div>
+                        </div>
+                        <span id="cpuPercent">25%</span>
+                    </div>
+                    <div class="pb-resource-bar">
+                        <span>GPU:</span>
+                        <div class="pb-bar">
+                            <div id="gpuBar" class="pb-bar-fill" style="width: 30%"></div>
+                        </div>
+                        <span id="gpuPercent">30%</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <div class="pb-footer">
+            <div id="status">BOARD OPERATOR PANEL READY - MONITORING ALL COMMUNICATIONS</div>
+        </div>
+    </div>
+
+    <!-- End screen overlay -->
+    <div class="end-overlay" id="endOverlay" style="display: none;">
+        <video id="endVideo" loop muted>
+            <source src="audio/end.mp4" type="video/mp4">
+        </video>
+    </div>
+    </div>
+
+    <!-- Audio element for board sounds -->
+    <audio id="boardAudio" preload="auto" crossorigin="anonymous"></audio>
+
+    <!-- Audio permission overlay -->
+    <div id="audioPermissionOverlay" class="audio-permission-overlay" style="display: none;">
+        <div class="audio-permission-modal">
+            <div class="permission-header">
+                <div class="phantom-logo">PHANTOM OS</div>
+                <div class="permission-title">Audio System Required</div>
+            </div>
+            <div class="permission-content">
+                <div class="permission-message">
+                    Click anywhere to enable audio communications
+                </div>
+                <div class="permission-instruction">
+                    Required for mission critical audio alerts
+                </div>
+            </div>
+            <div class="permission-footer">
+                <div class="click-indicator">Click to Continue</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO client (CDN for GitHub Pages) -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        // Auto-enable audio on first interaction
+        let audioUnlocked = false;
+        const enableAudio = () => {
+            if (!audioUnlocked) {
+                audioUnlocked = true;
+                console.log('[BOARD] Audio unlocked by user interaction');
+                
+                // Resume audio context if suspended
+                if (window.AudioContext || window.webkitAudioContext) {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume().then(() => {
+                            console.log('[BOARD] Audio context resumed');
+                        });
+                    }
+                }
+                
+                // Hide permission overlay if visible
+                const overlay = document.getElementById('audioPermissionOverlay');
+                if (overlay) {
+                    overlay.style.display = 'none';
+                }
+            }
+        };
+        
+        document.addEventListener('click', enableAudio, { once: true });
+        document.addEventListener('keydown', enableAudio, { once: true });
+        
+        // Show permission overlay after 2 seconds if audio not unlocked
+        setTimeout(() => {
+            if (!audioUnlocked) {
+                const overlay = document.getElementById('audioPermissionOverlay');
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                    overlay.addEventListener('click', enableAudio);
+                }
+            }
+        }, 2000);
+    </script>
+    <script src="audio-permission.js"></script>
+    <script src="board.js"></script>
+</body>
+</html>

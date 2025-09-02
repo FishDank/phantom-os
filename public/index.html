@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phantom OS - Redirecting...</title>
+    <style>
+        body {
+            background: #0a0e12;
+            color: #00ff41;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .redirect-message {
+            text-align: center;
+            font-size: 18px;
+            animation: blink 1s step-start infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="redirect-message">
+        REDIRECTING TO SECURE LOGIN...
+    </div>
+    
+    <script>
+        // Redirect to login page immediately (relative path for GitHub Pages)
+        window.location.href = 'login.html';
+    </script>
+</body>
+</html>

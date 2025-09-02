@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-DEX Terminal - Phantom OS Command Interface</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="terminal-container">
+        <!-- Scanlines overlay -->
+        <div class="scanlines"></div>
+        
+        <!-- Grid overlay -->
+        <div class="grid-overlay"></div>
+        
+        <!-- Header -->
+        <div class="terminal-header">
+            <div class="header-left">
+                <span class="status-indicator active"></span>
+                <span class="terminal-title">E-DEX COMMAND TERMINAL</span>
+            </div>
+            <div class="header-right">
+                <div class="system-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">CPU:</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="cpuBar" style="width: 25%"></div>
+                        </div>
+                        <span class="stat-value" id="cpuValue">25%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">GPU:</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="gpuBar" style="width: 30%"></div>
+                        </div>
+                        <span class="stat-value" id="gpuValue">30%</span>
+                    </div>
+                </div>
+                <div class="timestamp" id="timestamp">00:00:00</div>
+            </div>
+        </div>
+        
+        <!-- Main terminal area -->
+        <div class="terminal-main">
+            <!-- Left side - Terminal output -->
+            <div class="terminal-output" id="terminalOutput">
+                <div class="terminal-line">
+                    <span class="prompt">phantom@edex:~$ </span>
+                    <span class="command-text">System initialized. Awaiting mission parameters...</span>
+                </div>
+            </div>
+            
+            <!-- Right side - Map/Mission display -->
+            <div class="mission-display" id="missionDisplay">
+                <div class="display-header">MISSION INTERFACE</div>
+                <div class="display-content" id="displayContent">
+                    <div class="standby-message">STANDBY</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Command input -->
+        <div class="terminal-input-container">
+            <span class="input-prompt">phantom@edex:~$ </span>
+            <input type="text" class="terminal-input" id="commandInput" autocomplete="off" spellcheck="false">
+            <span class="cursor">|</span>
+        </div>
+        
+        <!-- Audio elements -->
+        <audio id="audioPlayer" preload="auto"></audio>
+        
+        <!-- End screen overlay -->
+        <div class="end-overlay" id="endOverlay" style="display: none;">
+            <video id="endVideo" loop muted>
+                <source src="audio/end.mp4" type="video/mp4">
+            </video>
+        </div>
+    </div>
+
+    <!-- Mission sequence state -->
+    <script>
+        window.missionState = {
+            currentStep: 0,
+            activated: false,
+            commandsEnabled: true,
+            currentSpeaker: null,
+            recognition: null,
+            mapVisible: false,
+            isListening: false,
+            missionStarted: false,
+            userRole: null
+        };
+    </script>
+    
+    <!-- Socket.IO client (CDN for GitHub Pages) -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="audio-permission.js"></script>
+    <script src="terminal-app.js"></script>
+</body>
+</html>
