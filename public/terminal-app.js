@@ -81,9 +81,9 @@ class PhantomTerminal {
 
         // Voice recognition is fully automatic - no manual controls
 
-        // Test mission advancement (F3 key for testing)
+        // Test mission advancement (CTRL + ALT + D key for testing)
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'F3' && (this.userRole === 'bryon' || this.userRole === 'ryan')) {
+            if (e.key === 'd' && e.ctrlKey && e.altKey && (this.userRole === 'bryon' || this.userRole === 'ryan')) {
                 e.preventDefault();
                 this.socket.emit('advanceMission');
                 this.addTerminalLine('[TEST] Mission step advanced manually');
@@ -499,7 +499,7 @@ class PhantomTerminal {
             '',
             'Voice Commands:',
             '  Microphone auto-activates on your turn',
-            '  F3 to advance mission (BRYON only - testing)'
+            '  CTRL+ALT+D to advance mission (BRYON only - testing)'
         ];
         
         helpText.forEach(line => this.addTerminalLine(line, 'help'));
